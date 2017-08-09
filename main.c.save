@@ -1,0 +1,292 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "bmplib.h"
+
+/*
+ * This method enlarges a 24-bit, uncompressed .bmp file
+ * that has been read in using readFile()
+ *
+ * original - an array containing the original PIXELs, 3 bytes per each
+ * rows     - the original number of rows
+ * cols     - the original number of columns
+ *
+ * scale    - the multiplier applied to EACH OF the rows and columns, e.g.
+ *           if scale=2, then 2* rows and 2*cols
+ *
+ * new      - the new array containing the PIXELs, allocated within
+ * newrows  - the new number of rows (scale*rows)
+ * newcols  - the new number of cols (scale*cols)
+ */
+int enlarge(PIXEL* original, int rows, int cols, int scale, 
+	    PIXEL** new, int* newrows, int* newcols) 
+{
+  	/* THIS IS THE METHOD THAT YOU SHOULD WRITE */
+
+
+	if (rows <= 0 || cols <= 0)
+	{
+		 return -1;
+	}
+
+	*newrows = rows * scale;
+	*newcols = cols * scale;
+	*new = (PIXEL*)malloc((*newrows) * (*newcols) * sizeof(PIXEL));
+	int row1, col1, row2, col2;
+	
+	for (row1 = 0; row1 < rows - 1; row1++)
+	{
+		for (col1 = 0; col1 < cols - 1; col1++)
+		{
+			PIXEL* o = original + row1*cols + col1;
+			for (row2 = 0; row2 < scale; row2++)
+			{
+				for(col2 = 0; col2 < scale; col2++)
+				{
+					PIXEL *n = (*new) + (row1 * scale + row2) * (*newcols) + (col1 * scale + col2);
+					*n = *o;
+				} 	
+			}
+		}
+	}
+	
+  	return 0;
+}
+
+/*
+ * This method rotates a 24-bit, uncompressed .bmp file that has been read 
+ * in using readFile(). The rotation is expressed in degrees and can be
+ * positive, negative, or 0 -- but it must be a multiple of 90 degrees
+ * 
+ * original - an array containing the original PIXELs, 3 bytes per each
+ * rows     - the number of rows
+ * cols     - the number of columns
+ * rotation - a positive or negative rotation, 
+ *
+ * new      - the new array containing the PIXELs, allocated within
+ * newrows  - the new number of rows
+ * newcols  - the new number of cols
+ */
+int rotate(PIXEL* original, int rows, int cols, int rotation,
+	   PIXEL** new, int* newrows, int* newcols)
+{
+  	/* THIS IS THE METHOD THAT YOU SHOULD WRITE */
+	//PIXEL* n;
+	//int row, col;
+
+	// dividing the roation by 90 to get a simpler number
+	int result = (rotation / 90) % 4;
+	
+	
+	
+	
+	
+	
+	if (result > 0)
+	{
+		result = 4 - result;
+ 	}
+	else 
+	{
+		result *= -1; / /This may be needed		
+	}
+		
+	if (rows <= 0 || cols <= 0)
+	{
+		return -1;
+	}
+		
+	*new = (PIXEL*)malloc(rows*cols*sizeof(PIXEL));
+	
+		
+
+	
+  	return 0;
+}
+
+/*
+ * This method horizontally flips a 24-bit, uncompressed bmp file
+ * that has been read in using readFile(). 
+ * 
+ * THIS IS GIVEN TO YOU SOLELY TO LOOK AT AS AN EXAMPLE
+ * TRY TO UNDERSTAND HOW IT WORKS
+ *
+ * original - an array containing the original PIXELs, 3 bytes per each
+ * rows     - the number of rows
+ * cols     - the number of columns
+ *
+ * new      - the new array containing the PIXELs, allocated within
+ */
+int flip (PIXEL *original, PIXEL **new, int rows, int cols) 
+{
+  	int row, col;
+
+	if ((rows <= 0) || (cols <= 0))
+	{
+		return -1;
+	}
+	
+  	*new = (PIXEL*)malloc(rows*cols*sizeof(PIXEL));
+
+  	for (row=0; row < rows; row++)
+    		for (col=0; col < cols; col++) 
+		{
+      			PIXEL* o = original + row*cols + col;
+      			PIXEL* n = (*new) + row*cols + (cols-1-col);
+      			*n = *o;
+    		}
+
+  	return 0;
+}
+
+// Parses the command line and checks for possible errors
+void commandLineParser(int argc, char** argv, int* sflag, int* svalue, int* rflag, int* rvalue, int* fflag, int* oflag, char** ovalue, char** ivalue, int* err)
+{
+	extern char* optarg;
+	extern int optind;
+	int c = 0;
+		
+	while ((c = getopt(argc, argv, "s:r:fo:")) != -1)
+	{	
+		switch(c)
+		{	
+			case 's':
+				if (*sflag == 1)
+				{
+					printf("Warning! two -s parameters have been passed, using the last one read.\n");
+				}
+				*sflag = 1;
+				*svalue = atoi(optarg);
+				break;
+			case 'r':
+				if (*rflag == 1)
+				{
+					printf("Warning! two -r parameters have been passed, using the last one read.\n");
+				}
+				*rflag = 1;
+				*rvalue = atoi(optarg);
+				break;
+			case 'f':
+				if (*fflag == 1)
+				{
+					printf("Warning! -f argument has already been read!\n");
+				}
+				*fflag = 1;
+				break;
+			case 'o':
+				if (*oflag == 1)
+				{
+					printf("Warning! -o has already been used, using last filename passed.\n");
+				}
+				*oflag = 1;
+				*ovalue = optarg;
+				break;
+			case '?':
+				*err = 1;
+				break;
+			default:
+				break;
+		}
+	}
+	
+	// Make the svalue a positive number if it is negative	
+	if ((*sflag == 1) && (svalue < 0))
+	{
+		printf("Warning! A negative number for the scale was read, changing the negative value into a positive number.\n");
+		*svalue *= -1;	
+	}
+	
+	// Checking if the rotate value is a multiple of 90, if it is not, then set the err flag...
+	if (*rflag == 1 && (*rvalue % 90 != 0))
+	{
+		printf("ERROR! The rotate value must be a multiple of 90!");
+		*err = 1;
+	}
+		
+	// If an error was found then the err flag is set and checked here to end the program
+	if (*err == 1)
+	{
+		exit(100);
+	}
+	
+	// Getting standard input
+	if (argc > optind)
+	{
+		*ivalue = argv[optind];
+	}
+	
+	//rvalue will be repurposed as a multiple of 90...
+	//*rvalue /= 90;
+}
+	
+int main(int argc, char** argv)
+{
+	int r, c, nr, nc;
+	PIXEL *b, *nb;
+	int err = 0;
+	int sflag = 0;
+	int svalue = 0;
+	int rflag = 0;
+	int rvalue = 0;
+	int fflag = 0;
+	int oflag = 0;
+	
+	char* ivalue = NULL; 	
+	char* ovalue = NULL;
+	
+	commandLineParser(argc, argv, &sflag, &svalue, &rflag, &rvalue, &fflag, &oflag, &ovalue, &ivalue, &err);
+	
+	if (ivalue != NULL)
+	{
+		// Code to handle from an input file	
+		readFile(ivalue, &r, &c, &b);
+	}
+	else
+	{
+		// Code to handle stdin
+	}
+	
+	if (sflag == 1)
+	{
+		// Perform the scale here
+		enlarge(b, r, c, svalue, &nb, &nr, &nc);
+	}
+	
+	b = nb;
+	if (rflag == 1)
+	{
+		// Perform the rotate
+	}
+	
+	b = nb;
+	if (fflag == 1)
+	{
+		// Perform the flip
+		flip(b, &nb, r, c);
+	
+	}
+	
+	if (oflag != 0)
+	{
+		writeFile("result.bmp", r, c, nb);
+		
+	}
+	else
+	{
+		// Code to handle to stdout
+		
+	}
+	
+	
+	
+	
+	// Consider these examples for future use...
+  	//readFile("example.bmp", &r, &c, &b);
+ 	//flip(b, &nb, r, c);
+  	//writeFile("result.bmp", r, c, nb);
+	
+  	free(b);
+  	free(nb);
+  	
+
+	return 0;
+}
